@@ -1,0 +1,19 @@
+export const MIGRATION_SQL = `
+CREATE TABLE IF NOT EXISTS days (
+  date TEXT PRIMARY KEY NOT NULL,
+  mood INTEGER,
+  went_well TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS tasks (
+  date TEXT NOT NULL,
+  slot INTEGER NOT NULL,
+  text TEXT NOT NULL DEFAULT '',
+  done INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (date, slot)
+);
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY NOT NULL,
+  value TEXT NOT NULL
+);
+`;
