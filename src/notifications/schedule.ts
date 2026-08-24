@@ -1,6 +1,6 @@
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { isExpoGo } from '@/src/ads/availability';
 import {
   ReminderPlan,
   buildReminderPlan,
@@ -9,16 +9,37 @@ import {
 } from '@/src/lib/reminders';
 import { AppSettings } from '@/src/lib/settings';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+type NotificationsModule = typeof import('expo-notifications');
+
+function loadNotifications(): NotificationsModule | null {
+  // SDK 53+ Expo Go Android throws on import (remote push was removed).
+  if (isExpoGo() && Platform.OS === 'android') {
+    return null;
+  }
+  try {
+    return require('expo-notifications') as NotificationsModule;
+  } catch {
+    return null;
+  }
+}
+
+function configureHandler(Notifications: NotificationsModule) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 export async function ensureNotificationPermission(): Promise<boolean> {
+  const Notifications = loadNotifications();
+  if (!Notifications) {
+    return false;
+  }
+  configureHandler(Notifications);
   const existing = await Notifications.getPermissionsAsync();
   if (existing.granted || existing.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL) {
     return true;
@@ -28,6 +49,11 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 }
 
 export async function syncDailyReminders(settings: AppSettings): Promise<ReminderPlan[]> {
+  const Notifications = loadNotifications();
+  if (!Notifications) {
+    return [];
+  }
+  configureHandler(Notifications);
   const allowed = await ensureNotificationPermission();
   await Notifications.cancelAllScheduledNotificationsAsync();
   if (!allowed) {
@@ -65,6 +91,12 @@ export async function syncDailyReminders(settings: AppSettings): Promise<Reminde
 }
 
 export async function scheduleTestReminder(minutesFromNow = 1): Promise<void> {
+  const Notifications = loadNotifications();
+  if (!Notifications) {
+    throw new Error(
+      'Expo Go on Android cannot schedule notifications (SDK 53+). Mood and tasks still work. Reminders need a later development build.',
+    );
+  }
   const allowed = await ensureNotificationPermission();
   if (!allowed) {
     throw new Error('Notifications permission is off');

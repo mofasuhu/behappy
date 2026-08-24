@@ -1,9 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
-
 import { isAdsSdkAvailable } from './availability';
 import { bannerUnitId, PRODUCTION_BANNER_UNIT_ID } from './config';
+import { loadGoogleMobileAds } from './loadNativeAds';
 
 type Props = {
   showAds: boolean;
@@ -14,7 +13,8 @@ export function BannerAdView({ showAds }: Props) {
     return null;
   }
 
-  if (!isAdsSdkAvailable()) {
+  const ads = isAdsSdkAvailable() ? loadGoogleMobileAds() : null;
+  if (!ads) {
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
       return (
         <View style={styles.placeholder} testID="ad-placeholder">
@@ -25,11 +25,12 @@ export function BannerAdView({ showAds }: Props) {
     return null;
   }
 
-  const unitId = TestIds?.BANNER ?? bannerUnitId(PRODUCTION_BANNER_UNIT_ID);
+  const BannerAd = ads.BannerAd;
+  const unitId = ads.TestIds?.BANNER ?? bannerUnitId(PRODUCTION_BANNER_UNIT_ID);
 
   return (
     <View style={styles.wrap} testID="ad-banner">
-      <BannerAd unitId={unitId} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} />
+      <BannerAd unitId={unitId} size={ads.BannerAdSize.ANCHORED_ADAPTIVE_BANNER} />
     </View>
   );
 }
