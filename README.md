@@ -1,47 +1,63 @@
 # BeHappy
 
-Free Android daily app: tap today’s mood, write three things, keep a streak. Ads fund it. The only purchase is one-time **Remove Ads**. Every feature stays free.
+BeHappy is a private, local-first daily wellbeing journal for Android and iOS. Record how you feel, keep three small tasks, and write what went well—then build a streak from consistent check-ins.
 
-Journal data stays on-device (SQLite). No account.
+## Features
 
-## Open on your phone (no Android SDK)
+- Five-point mood check-in from Low to Great.
+- Three daily tasks with editable text and completion state.
+- A “What went well?” note for each day.
+- History view backed by on-device SQLite, with streak calculation from completed check-ins.
+- Morning-plan and optional evening reminders, including a one-minute test reminder.
+- System, light, and dark themes.
+- Free core experience supported by ads, with consent handling and a one-time **Remove Ads** purchase (`remove_ads`) plus restore purchases.
+- In-app privacy policy screen and no account requirement.
 
-`press a` in the Expo terminal needs `adb` and the Android SDK. You do **not** need that to try BeHappy.
+## Stack
 
-1. Put the phone and this Mac on the **same Wi‑Fi**.
-2. Install **Expo Go** ([Android](https://play.google.com/store/apps/details?id=host.exp.exponent) or [iPhone](https://apps.apple.com/app/expo-go/id982107779)).
-3. In this folder run `npm start` and leave it running.
-4. Open Expo Go and **scan the QR code** in the terminal (or the browser tab Expo opens).
-   - Android: use Expo Go’s scanner.
-   - iPhone: the Camera app, or Expo Go.
+Expo SDK 57, React Native 0.86, TypeScript, Expo Router, and `expo-sqlite`. Notifications use `expo-notifications`; ads use `react-native-google-mobile-ads`; billing uses `expo-iap`. The app is organized around file-based routes in `app/`, reusable UI in `components/` and `src/components/`, and persistence in `src/db/`.
 
-If the QR never loads, same network is usually the issue. From the project folder you can try:
+Journal entries and settings are stored locally on the device. Ads, consent, notifications, and purchases are platform services, so review the privacy policy and store disclosures before publishing.
+
+## Run locally
+
+Requirements: Node.js, npm, and either Expo Go or an Android/iOS development build.
+
+```bash
+npm install
+npm start
+```
+
+Scan the terminal QR code with Expo Go while the computer and phone are on the same Wi-Fi. If the device cannot reach the local network, use:
 
 ```bash
 npx expo start --tunnel
 ```
 
-That is slower, but it works when the phone cannot see `192.168.x.x`.
-
-See [TESTING.md](TESTING.md) before any Play upload.
-
-## Run locally
+Useful scripts:
 
 ```bash
-npm install
 npm test
-npm start
+npm run typecheck
+npm run android
+npm run ios
+npm run web
 ```
 
-## Play Store
+The native ad, in-app purchase, and notification integrations are loaded defensively for Expo Go, but store billing and production ads require the appropriate native build and platform configuration.
 
-1. Create a Play Console app for `com.behappy.app` ($25 developer fee).
-2. Host [privacy.html](privacy.html) on HTTPS.
-3. Create the `remove_ads` managed product (one-time, non-consumable).
-4. Replace AdMob test app IDs in `app.json` with your real app ID.
-5. `npx eas-cli build --profile production --platform android`
-6. Upload the `.aab` and complete Data safety using [store/listing.md](store/listing.md).
+## Production checklist
 
-## Stack
+1. Create the Android package/iOS bundle for `com.behappy.app` in the relevant stores.
+2. Replace the sample Google Mobile Ads IDs in `app.json` with production configuration and provide `EXPO_PUBLIC_ADMOB_BANNER_UNIT_ID` for the production banner.
+3. Configure the one-time `remove_ads` product in each store.
+4. Host `privacy.html` on HTTPS and complete the store data-safety disclosures.
+5. Run the scenarios in [`TESTING.md`](TESTING.md) before uploading.
 
-Expo SDK 57, Expo Router, SQLite, AdMob banners, Play Billing via `expo-iap`.
+Build with EAS after configuring credentials and store metadata:
+
+```bash
+npx eas-cli build --profile production --platform android
+```
+
+Never commit signing files, store credentials, private keys, or production secrets. Keep them in the build service or local environment; the repository ignores common native credential and environment-file patterns.
